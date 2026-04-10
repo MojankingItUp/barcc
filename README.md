@@ -13,9 +13,15 @@ Each GPU renders ever Nth frame. So if you have 2 GPUs, GPU 1 renders frame 0, 2
 To run, run this in the terminal, where the `barcc` executable is placed:
 
 ```
-./barcc 2 250 HIP true path/to/your/blend/file/.blend /path/to/your/render/folder /path/to/the/blender/executable/blender-5.1.0-linux-x64/blender
+./barcc NumberOfGPUs TotalFramesToRender HIP Debug path/to/your/blend/file/.blend /path/to/your/render/folder /path/to/the/blender/executable/blender
 ```
 *Note: The Blender path should also include "blender" at the end. It shouldn't just be the folder*
+*Note: Only Cycles is supported*
+
+Example command:
+```
+./barcc 2 250 HIP false /path/to/your/blend/file/.blend /path/to/your/render/folder /path/to/the/blender/executable/blender-5.1.0-linux-x64/blender
+```
 
 Command options:
 1. amount of GPUs
