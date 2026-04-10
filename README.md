@@ -16,6 +16,7 @@ To run, run this in the terminal, where the `barcc` executable is placed:
 ./barcc NumberOfGPUs TotalFramesToRender HIP Debug path/to/your/blend/file/.blend /path/to/your/render/folder /path/to/the/blender/executable/blender
 ```
 *Note: The Blender path should also include "blender" at the end. It shouldn't just be the folder*
+
 *Note: Only Cycles is supported*
 
 Example command:
