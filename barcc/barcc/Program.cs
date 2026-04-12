@@ -9,12 +9,13 @@ if (args.Length == 0 || args[0] == "-h" || args[0] == "")
     WriteLine("Options:");
     WriteLine("-h                == help");
     WriteLine("1. argument       == amount of GPUs");
-    WriteLine("2. argument       == end frame for the animation");
-    WriteLine("3. argument       == device backend (HIP, CUDA, etc...)");
-    WriteLine("4. argument       == enable debug printing");
-    WriteLine("5. argument       == the path to the project that we're going to render");
-    WriteLine("6. argument       == output path for the images to be rendered");
-    WriteLine("7. argument       == path to Blender's executable file");
+    WriteLine("2. argument       == start frame for the animation");
+    WriteLine("3. argument       == end frame for the animation");
+    WriteLine("4. argument       == device backend (HIP, CUDA, etc...)");
+    WriteLine("5. argument       == enable debug printing");
+    WriteLine("6. argument       == the path to the project that we're going to render");
+    WriteLine("7. argument       == output path for the images to be rendered");
+    WriteLine("8. argument       == path to Blender's executable file");
     WriteLine();
     WriteLine("Supported device backends:");
     WriteLine("1. CUDA");
@@ -26,26 +27,27 @@ if (args.Length == 0 || args[0] == "-h" || args[0] == "")
 }
 
 int amountOfGpus = int.Parse(args[0]);
-int endFrame = int.Parse(args[1]);
-string deviceBackend = args[2]; // HIPRT or CUDA or whatever
-bool debug = bool.Parse(args[3]);
-string projectPath = Path.GetFullPath(args[4]);
-string outputPath = Path.GetFullPath(args[5]);
-string blenderPath = Path.GetFullPath(args[6]);
+int startFrame = int.Parse(args[1]);
+int endFrame = int.Parse(args[2]);
+string deviceBackend = args[3]; // HIPRT or CUDA or whatever
+bool debug = bool.Parse(args[4]);
+string projectPath = Path.GetFullPath(args[5]);
+string outputPath = Path.GetFullPath(args[6]);
+string blenderPath = Path.GetFullPath(args[7]);
 
-Process[] processes = new Process[amountOfGpus];
-string[] blenderCommands = new string[amountOfGpus];
-
-WriteLine("Commands to run:");
-for (int i = 0; i < amountOfGpus; i++)
+if (debug)
 {
-    blenderCommands[i] = CommandBuilder.BuildCommand(i, i, amountOfGpus, endFrame, "CYCLES", deviceBackend, outputPath, blenderPath, projectPath);
-    WriteLine();
-    WriteLine(blenderCommands[i]);
-    WriteLine();
+    WriteLine("amountOfGpus: " + amountOfGpus);
+    WriteLine("endFrame: " + endFrame);
+    WriteLine("deviceBackend: " + deviceBackend);
+    WriteLine("debug: " + debug);
+    WriteLine("projectPath: " + projectPath);
+    WriteLine("outputPath: " + outputPath);
+    WriteLine("blenderPath: " + blenderPath);
+    WriteLine("startFrame: " + startFrame);
 }
 
-WriteLine($"Starting Blender on: {amountOfGpus} GPUs");
+Process[] processes = new Process[amountOfGpus];
 
 using FileSystemWatcher watcher = new(outputPath);
 watcher.NotifyFilter = NotifyFilters.Attributes
@@ -57,19 +59,28 @@ watcher.NotifyFilter = NotifyFilters.Attributes
                        | NotifyFilters.Security
                        | NotifyFilters.Size;
 
-//watcher.Changed += OnWatcherOnChanged;
 watcher.Created += OnWatcherOnChanged;
 
 watcher.Filter = "*.avif";
 watcher.EnableRaisingEvents = true;
 
+WriteLine($"Starting Blender on: {amountOfGpus} GPUs");
+WriteLine("Commands to run:");
 for (int i = 0; i < amountOfGpus; i++)
 {
+    string blenderCommand = CommandBuilder.BuildCommand(i, startFrame + i, amountOfGpus, endFrame, "CYCLES", deviceBackend, outputPath, blenderPath, projectPath);
+    WriteLine();
+    WriteLine(blenderCommand);
+    WriteLine();
+    
     ProcessStartInfo proc = new();
     proc.FileName = "/bin/bash";
     proc.ArgumentList.Add("-c");
-    proc.ArgumentList.Add(blenderCommands[i]);
+    proc.ArgumentList.Add(blenderCommand);
     proc.UseShellExecute = false;
+    // We want to redirect standard out/err. It's redirected to /dev/null.
+    // So when we set debug to "false", what we're doing is just
+    // setting redirect to /dev/null true.
     proc.RedirectStandardOutput = !debug;
     proc.RedirectStandardError = !debug;
     
@@ -77,6 +88,8 @@ for (int i = 0; i < amountOfGpus; i++)
 
     if (!debug)
     {
+        // If debug is false, then we drain the standard out/err
+        // as is this program's stack will overflow.
         processes[i].BeginOutputReadLine();
         processes[i].BeginErrorReadLine();
     }
@@ -93,5 +106,5 @@ return;
 void OnWatcherOnChanged(object sender, FileSystemEventArgs fileSystemEventArgs)
 {
     int rendered = Directory.GetFiles(outputPath, "*.avif").Length;
-    WriteLine($"Rendered {rendered} out of {endFrame}");
+    WriteLine($"Rendered {startFrame + rendered} out of {endFrame}");
 }
