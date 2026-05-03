@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using barcc;
 using static System.Console;
 
@@ -60,9 +61,9 @@ watcher.NotifyFilter = NotifyFilters.Attributes
                        | NotifyFilters.Size;
 
 watcher.Created += OnWatcherOnChanged;
-
-watcher.Filter = "*.avif";
+watcher.Filter = "*.*";
 watcher.EnableRaisingEvents = true;
+watcher.IncludeSubdirectories = true;
 
 WriteLine($"Starting Blender on: {amountOfGpus} GPUs");
 WriteLine("Commands to run:");
@@ -100,11 +101,11 @@ foreach (Process p in processes)
     p.WaitForExit();
 }
 
-watcher.Created -= OnWatcherOnChanged;
 return;
 
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 void OnWatcherOnChanged(object sender, FileSystemEventArgs fileSystemEventArgs)
 {
-    int rendered = Directory.GetFiles(outputPath, "*.avif").Length;
+    int rendered = Directory.GetFiles(outputPath).Length;
     WriteLine($"Rendered {startFrame + rendered} out of {endFrame}");
 }
